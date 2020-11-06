@@ -1,0 +1,32 @@
+@startuml
+enum ClientStatus{
+ + WAITING
+ + DRINKING
+ + GOING_FOR_ANOTHER
+ + WASTED
+}
+
+class Client {
+ + id: int
+ + beers_num: int
+ + drink_time_end: int
+ + drink_time: int
+ + max_beers_num: int
+
+ + is_drinking() bool
+ + has_mug() bool
+}
+
+class Pub {
+ + id
+ + client_list: std::list<Client>
+ + mugs_num: int
+ + max_mugs_num: int
+
+ + client_status(id_c: int)
+ + print_client_report();
+ + give_beer(id_c: int)
+ + no_clients();
+ + take_mug(id_c);
+}
+@enduml
