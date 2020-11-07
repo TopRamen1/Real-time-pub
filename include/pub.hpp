@@ -9,6 +9,8 @@
 #include <queue>
 #include <iostream>
 #include <string>
+#include <time.h>
+#include <iomanip>
 
 #define MAX_BEERS_NUM  5
 #define DRINK_TIME 4
@@ -52,10 +54,6 @@ public:
     void print_client_report(double t) const;
     bool no_clients();
 
-    /// sim methods
-    int sim_step(double t);
-    void sim(double t);
-
     void take_mugs();
     void fill_mugs(double t);
     void give_beer(double t);
@@ -73,5 +71,16 @@ private:
     std::queue<int> client_id_queue;
 };
 
+class RealTimePub: public Pub {
+public:
+    void sim_step(double t);
+    void sim(double t);
+    void sim_int(double t);
+
+    RealTimePub(int id_, int n, int max_mugs_num_ = MAX_MUGS_NUM, double fill_time_ = FILL_TIME) : Pub(id_, n, max_mugs_num_, fill_time_) {};
+
+private:
+    int sim_time_int; /// in int seconds
+};
 
 #endif //PUB_PUB_HPP

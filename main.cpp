@@ -3,9 +3,13 @@
 
 
 int main() {
-    Pub p1 = Pub(1,15);
-    p1.print_client_report(0);
-    p1.sim(50);
-    std::cout << "Hello, World!" << std::endl;
+    clock_t start_time = clock();
+
+    RealTimePub p1 = RealTimePub(1,5);
+    p1.sim(200);
+
+    clock_t time_now_clock = clock();
+    double time_now_sec = ((double)time_now_clock - (double)start_time)/CLOCKS_PER_SEC;
+    std::cout << "Program finished in: " << time_now_sec << std::endl;
     return 0;
 }

@@ -4,15 +4,6 @@
 #include "pub.hpp"
 
 ClientStatus Client::give_status() const {
-    /*
-    if(drink_time_end > 0) {
-        return DRINKING;
-    } else if (beers_num < max_beers_num) {
-        return WAITING;
-    } else if (beers_num == max_beers_num) {
-        return WASTED
-    }
-     */
     return status;
 }
 
@@ -118,6 +109,7 @@ void Pub::take_mugs() {
 void Pub::fill_mugs(double t) {
     if(fill_time_end == 0) {
         while (mugs_num > 0) {
+            if(client_id_queue.empty()){ break;}
             client_map.at(client_id_queue.front()).change_status(WAITING);
             fill_time_end = t + fill_time;
             client_id_queue.pop();
@@ -136,21 +128,44 @@ void Pub::give_beer(double t) {
         fill_time_end = 0;
     }
 }
-int Pub::sim_step(double t) {
-    if(no_clients()) {return -1;}
+
+void RealTimePub::sim_step(double t) {
+    if(no_clients()) {return;}
+    all_drink(t);
     take_mugs();
     fill_mugs(t);
     give_beer(t);
-    all_drink(t);
-    print_client_report(t);
-    return 0;
+    if(t - sim_time_int >= 1) {
+        print_client_report(t);
+        sim_time_int++;
+    }
 }
 
-void Pub::sim(double t) {
-    for (int i = 0; i < t; i++) {
-        if(sim_step(i) == -1) {
+void RealTimePub::sim_int(double t) {
+    for (int i = 0 ; i < t ; i++) {
+        if(no_clients()) {
             return;
         }
+    }
+}
+
+void RealTimePub::sim(double t) {
+    clock_t start_time = clock();
+    sim_time_int = 0;
+    print_client_report(0);
+    //bool send_report = true;
+    clock_t time_now_clock = clock();
+    double time_now_sec = ((double)time_now_clock - (double)start_time)/CLOCKS_PER_SEC;
+    while(time_now_sec <= t) {
+        //std::cout << std::setprecision(5) << sim_time_int << std::endl;
+        if(no_clients()) {
+            print_client_report(time_now_sec);
+            return;
+        }
+        sim_step(time_now_sec);
+        //send_report = false;
+        time_now_clock = clock();
+        time_now_sec = ((double)time_now_clock - (double)start_time)/CLOCKS_PER_SEC;
     }
 }
 
