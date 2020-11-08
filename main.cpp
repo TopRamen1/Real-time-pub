@@ -3,8 +3,8 @@
 
 
 int main() {
-    char retry = 'Y';
-    while (retry == 'Y') {
+    std::string retry = "tak";
+    while (retry == "tak") {
         int n;
         std::cout << "Podaj ilosc klientow: ";
         std::cin >> n;
