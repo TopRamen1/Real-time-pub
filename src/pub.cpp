@@ -7,7 +7,7 @@ ClientStatus Client::give_status() const {
     return status;
 }
 
-Client::Client(int id_, double max_beers_num_, double drink_time_) : id(id_), max_beers_num(max_beers_num_), drink_time(drink_time_) {
+Client::Client(int id_, int max_beers_num_, double drink_time_) : id(id_), max_beers_num(max_beers_num_), drink_time(drink_time_) {
 
 }
 
@@ -42,8 +42,6 @@ void Client::drink(double t) {
     } else if (drink_time_end <= t && beers_num < max_beers_num) {
         status = FINISHED;
         drink_time_end = 0;
-    } else if (drink_time_end == 0) {
-        std::cout << "ERROR: client should not be drinking" << std::endl;
     }
 }
 
@@ -55,7 +53,7 @@ void Client::take_beer(double t) {
     }
 }
 
-Pub::Pub(int id_, int n, int max_mugs_num_, double fill_time_)  : id(id_), max_mugs_num(max_mugs_num_), fill_time(fill_time_) {
+Pub::Pub(int n, int max_mugs_num_, double fill_time_)  : max_mugs_num(max_mugs_num_), fill_time(fill_time_) {
     // client list and queue initialization
     for(int i = 0 ; i < n ; i++) {
         client_map.insert(std::pair<int,Client>(i,Client(i)));
@@ -70,15 +68,15 @@ ClientStatus Pub::client_status(const int id_client) const {
 
 void Pub::print_client_report(double t) const {
     std::cout << "Time:" << t << std::endl;
-    for(auto it = client_map.begin() ; it != client_map.end() ; it++) {
-        std::cout << it->first << " " << it->second.give_status_str() << std::endl;
+    for(const auto & it : client_map) {
+        std::cout << "Id: " << it.first << " " << it.second.give_status_str() << " DrinkT:" << it.second.get_drink_time_end() << " FillT:" << fill_time_end << std::endl;
     }
     std::cout << std::endl;
 }
 
 bool Pub::no_clients() {
-    for(auto it = client_map.begin() ; it != client_map.end() ; it++) {
-        if(it->second.give_status() != KICKED_OUT) {
+    for(auto & it : client_map) {
+        if(it.second.give_status() != KICKED_OUT) {
             return false;
         }
     }
@@ -86,22 +84,22 @@ bool Pub::no_clients() {
 }
 
 void Pub::all_drink(double t) {
-    for(auto it = client_map.begin() ; it != client_map.end() ; it++) {
-        if(it->second.give_status() == DRINKING) {
-            it->second.drink(t);
+    for(auto & it : client_map) {
+        if(it.second.give_status() == DRINKING) {
+            it.second.drink(t);
         }
     }
 }
 
 void Pub::take_mugs() {
-    for(auto it = client_map.begin() ; it != client_map.end() ; it++) {
-        if(it->second.give_status() == FINISHED) {
+    for(auto & it : client_map) {
+        if(it.second.give_status() == FINISHED) {
             mugs_num ++;
-            client_id_queue.push(it->first); /// queue update
-            it->second.change_status(GOING_FOR_ANOTHER);
-        } else if (it->second.give_status() == WASTED) {
+            client_id_queue.push(it.first); /// queue update
+            it.second.change_status(GOING_FOR_ANOTHER);
+        } else if (it.second.give_status() == WASTED) {
             mugs_num ++;
-            it->second.change_status(KICKED_OUT);
+            it.second.change_status(KICKED_OUT);
         }
     }
 }
@@ -120,9 +118,9 @@ void Pub::fill_mugs(double t) {
 
 void Pub::give_beer(double t) {
     if(fill_time_end <= t) {
-        for(auto it = client_map.begin() ; it != client_map.end() ; it++) {
-            if(it->second.give_status() == WAITING) {
-                it->second.take_beer(t);
+        for(auto & it : client_map) {
+            if(it.second.give_status() == WAITING) {
+                it.second.take_beer(t);
             }
         }
         fill_time_end = 0;
@@ -149,37 +147,23 @@ void RealTimePub::sim_int(double t) {
     }
 }
 
-void RealTimePub::sim(double t) {
-    clock_t start_time = clock();
-    sim_time_int = 0;
-    print_client_report(0);
-    //bool send_report = true;
+void RealTimePub::update_time_now() {
     clock_t time_now_clock = clock();
-    double time_now_sec = ((double)time_now_clock - (double)start_time)/CLOCKS_PER_SEC;
-    while(time_now_sec <= t) {
-        //std::cout << std::setprecision(5) << sim_time_int << std::endl;
-        if(no_clients()) {
-            print_client_report(time_now_sec);
-            return;
-        }
+    time_now_sec = ((double)time_now_clock - (double)start_time)/CLOCKS_PER_SEC;
+}
+
+void RealTimePub::sim() {
+    print_client_report(0);
+    start_timer();
+
+    update_time_now();
+    while(!no_clients()) {
         sim_step(time_now_sec);
-        //send_report = false;
-        time_now_clock = clock();
-        time_now_sec = ((double)time_now_clock - (double)start_time)/CLOCKS_PER_SEC;
+
+        update_time_now();
     }
+    print_client_report(time_now_sec);
+
 }
-
-
-
-/*
-void Pub::update_queue(double t) {
-    /// updating queue
-    for(auto it = client_map.begin() ; it != client_map.end() ; it++) {
-        if(it->second.give_status() == GOING_FOR_ANOTHER) {
-            client_id_queue.push(it->first);
-        }
-    }
-}
-*/
 
 

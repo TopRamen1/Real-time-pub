@@ -9,8 +9,9 @@
 #include <queue>
 #include <iostream>
 #include <string>
-#include <time.h>
+#include <ctime>
 #include <iomanip>
+#include <algorithm>
 
 #define MAX_BEERS_NUM  5
 #define DRINK_TIME 4
@@ -29,11 +30,12 @@ enum ClientStatus {
 
 class Client {
 public:
-    Client(int id_, double max_beers_num_ = MAX_BEERS_NUM, double drink_time_ = DRINK_TIME);
+    explicit Client(int id_, int max_beers_num_ = MAX_BEERS_NUM, double drink_time_ = DRINK_TIME);
     ClientStatus give_status() const;
     std::string give_status_str() const;
+    double get_drink_time_end() const {return drink_time_end;}
+    int get_beers_num() const {return beers_num;}
     void change_status(ClientStatus status1);
-
     void drink(double t);
     void take_beer(double t);
 
@@ -49,19 +51,18 @@ private:
 
 class Pub {
 public:
-    Pub(int id_, int n, int max_mugs_num_ = MAX_MUGS_NUM, double fill_time_ = FILL_TIME);
-    ClientStatus client_status(const int id_client) const;
+    explicit Pub(int n, int max_mugs_num_ = MAX_MUGS_NUM, double fill_time_ = FILL_TIME);
+    ClientStatus client_status(int id_client) const;
     void print_client_report(double t) const;
     bool no_clients();
 
+    void all_drink(double t);
     void take_mugs();
     void fill_mugs(double t);
     void give_beer(double t);
-    void all_drink(double t);
-    //void update_queue(double t);
+
 
 private:
-    int id;
     int mugs_num;
     double fill_time_end = 0;
     int max_mugs_num;
@@ -74,13 +75,18 @@ private:
 class RealTimePub: public Pub {
 public:
     void sim_step(double t);
-    void sim(double t);
+    void sim();
     void sim_int(double t);
 
-    RealTimePub(int id_, int n, int max_mugs_num_ = MAX_MUGS_NUM, double fill_time_ = FILL_TIME) : Pub(id_, n, max_mugs_num_, fill_time_) {};
+    void start_timer() { start_time = clock(); sim_time_int = 0;};
+    void update_time_now();
+
+    explicit RealTimePub(int n, int max_mugs_num_ = MAX_MUGS_NUM, double fill_time_ = FILL_TIME) : Pub(n, max_mugs_num_, fill_time_) {};
 
 private:
-    int sim_time_int; /// in int seconds
+    int sim_time_int = 0; /// in int seconds
+    clock_t start_time = 0;
+    double time_now_sec = 0;
 };
 
 #endif //PUB_PUB_HPP

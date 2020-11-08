@@ -3,13 +3,19 @@
 
 
 int main() {
-    clock_t start_time = clock();
+    char retry = 'Y';
+    while (retry == 'Y') {
+        int n;
+        std::cout << "Enter number of clients: ";
+        std::cin >> n;
+        std::cout << '\n';
 
-    RealTimePub p1 = RealTimePub(1,5);
-    p1.sim(200);
+        RealTimePub p1 = RealTimePub(n);
+        p1.sim();
 
-    clock_t time_now_clock = clock();
-    double time_now_sec = ((double)time_now_clock - (double)start_time)/CLOCKS_PER_SEC;
-    std::cout << "Program finished in: " << time_now_sec << std::endl;
+        std::cout << "Do you want to open pub again(Y/n): ";
+        std::cin >> retry;
+        std::cout << '\n';
+    }
     return 0;
 }
