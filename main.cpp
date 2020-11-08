@@ -6,14 +6,14 @@ int main() {
     char retry = 'Y';
     while (retry == 'Y') {
         int n;
-        std::cout << "Enter number of clients: ";
+        std::cout << "Podaj ilosc klientow: ";
         std::cin >> n;
         std::cout << '\n';
 
         RealTimePub p1 = RealTimePub(n);
         p1.sim();
 
-        std::cout << "Do you want to open pub again(Y/n): ";
+        std::cout << "Chcesz otworzyc pub ponownie?(Y/n): ";
         std::cin >> retry;
         std::cout << '\n';
     }
