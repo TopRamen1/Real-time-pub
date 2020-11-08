@@ -13,7 +13,7 @@ int main() {
         RealTimePub p1 = RealTimePub(n);
         p1.sim();
 
-        std::cout << "Chcesz otworzyc pub ponownie?(Y/n): ";
+        std::cout << "Chcesz otworzyc pub ponownie?(tak/nie): ";
         std::cin >> retry;
         std::cout << '\n';
     }
