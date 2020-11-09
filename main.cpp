@@ -10,10 +10,11 @@ int main() {
         std::cin >> n;
         std::cout << '\n';
 
-        RealTimePub p1 = RealTimePub(n);
-        p1.sim();
+        RealTimePub p1 = RealTimePub(n); /// inicializacja pubu
 
-        std::cout << "Chcesz otworzyc pub ponownie?(tak/nie): ";
+        p1.sim(); /// Uruchomienie symulacji
+
+        std::cout << "\nChcesz otworzyc pub ponownie?(tak/nie): ";
         std::cin >> retry;
         std::cout << '\n';
     }

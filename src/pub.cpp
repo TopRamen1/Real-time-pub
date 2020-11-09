@@ -3,7 +3,7 @@
 //
 #include "pub.hpp"
 
-ClientStatus Client::give_status() const {
+ClientStatus Client::get_status() const {
     return status;
 }
 
@@ -12,7 +12,7 @@ Client::Client(int id_, int max_beers_num_, double drink_time_) : id(id_), max_b
 
 }
 
-std::string Client::give_status_str() const {
+std::string Client::get_status_str() const {
     switch (status) {
         case GOING_FOR_FIRST:
             return "Czeka w kolejce na pierwsze piwo";
@@ -21,7 +21,7 @@ std::string Client::give_status_str() const {
         case DRINKING:
             return "Pije";
         case FINISHED:
-            return "Skończyl piwo";
+            return "Skonczyl piwo";
         case WASTED:
             return "Pijany";
         case GOING_FOR_ANOTHER:
@@ -32,32 +32,44 @@ std::string Client::give_status_str() const {
     return "ERRROR: Nie znany stan";
 }
 
-void Client::change_status(ClientStatus status1) {
+void Client::print_status(double t) const {
+    std::cout << std::fixed;
+    std::cout.precision(3);
+    std::cout << t << " | Id: " << id << " Status: " << get_status_str() << std::endl;
+}
+
+void Client::change_status(const ClientStatus status1) {
     status = status1;
 }
 
-void Client::drink(double t) {
+void Client::drink(double t, double t_pr) {
     /// Sprawdza czy klient wypił piwo i ma pić kolejne
+
     if (drink_time_end <= t && beers_num == max_beers_num) {
         status = WASTED;
         drink_time_end = 0;
+        print_status(t_pr);
     } else if (drink_time_end <= t && beers_num < max_beers_num) {
         status = FINISHED;
         drink_time_end = 0;
+        print_status(t_pr);
     }
 }
 
-void Client::take_beer(double t) {
+void Client::take_beer(double t, double t_pr) {
     /// Jeśli klient czeka na piwo zmienia jego status na pije i oblicza czas skończenia picia
+
     if (status == WAITING) {
         status = DRINKING;
         drink_time_end = t + drink_time;
         beers_num++;
+        print_status(t_pr);
     }
 }
 
 Pub::Pub(int n, int max_mugs_num_, double fill_time_) : max_mugs_num(max_mugs_num_), fill_time(fill_time_) {
     /// Inicjalizacja klientów oraz dodanie ich do kolejki
+
     for (int i = 0; i < n; i++) {
         client_map.insert(std::pair<int, Client>(i, Client(i)));
         client_id_queue.push(i);
@@ -66,22 +78,24 @@ Pub::Pub(int n, int max_mugs_num_, double fill_time_) : max_mugs_num(max_mugs_nu
 }
 
 ClientStatus Pub::client_status(const int id_client) const {
-    return client_map.at(id_client).give_status();
+    return client_map.at(id_client).get_status();
 }
 
 void Pub::print_client_report(double t) const {
     /// wypisuje status wszystkich kilentów
+
     std::cout << "Time:" << t << std::endl;
     for (const auto &it : client_map) {
-        std::cout << "Id: " << it.first << " Status: " << it.second.give_status_str() << std::endl;
+        std::cout << "Id: " << it.first << " Status: " << it.second.get_status_str() << std::endl;
     }
     std::cout << std::endl;
 }
 
-bool Pub::no_clients() {
+bool Pub::no_clients() const {
     /// sprawdza czy w pubie nie ma klientów
+
     for (auto &it : client_map) {
-        if (it.second.give_status() != KICKED_OUT) {
+        if (it.second.get_status() != KICKED_OUT) {
             return false;
         }
     }
@@ -90,35 +104,43 @@ bool Pub::no_clients() {
 
 void Pub::all_drink(double t) {
     /// sprawdza któży kienci skończyli pić
+
     for (auto &it : client_map) {
-        if (it.second.give_status() == DRINKING) {
-            it.second.drink(t);
+        if (it.second.get_status() == DRINKING) {
+            it.second.drink(t, get_time_now());  /// wysłąm czas kroku do obliczeń i aktualny czas do wyświetlenia
         }
     }
 }
 
 void Pub::take_mugs() {
     /// Odbiera kufle od klientów któży skończyli pić i dodaje ich na koniec kolejki lub wyrzuca z baru
+
     for (auto &it : client_map) {
-        if (it.second.give_status() == FINISHED) {
+        if (it.second.get_status() == FINISHED) {
             mugs_num++;
-            client_id_queue.push(it.first); /// queue update
+            client_id_queue.push(it.first); /// dodanie klienta do kolejki
             it.second.change_status(GOING_FOR_ANOTHER);
-        } else if (it.second.give_status() == WASTED) {
+            it.second.print_status(get_time_now());
+        } else if (it.second.get_status() == WASTED) {
             mugs_num++;
             it.second.change_status(KICKED_OUT);
+            it.second.print_status(get_time_now());
         }
     }
 }
 
 void Pub::fill_mugs(double t) {
     /// Napełnia kufle klientom w kolejce w zależniości od tego ile jest wolnych kufli
+
     if (fill_time_end == 0) {
         while (mugs_num > 0) {
             if (client_id_queue.empty()) { break; }
             client_map.at(client_id_queue.front()).change_status(WAITING);
-            fill_time_end = t + fill_time;
-            client_id_queue.pop();
+            client_map.at(client_id_queue.front()).print_status(get_time_now()); /// wyświetlam aktualny czas
+
+            fill_time_end = t + fill_time; /// do obliczeń wykożystuje czas kroku
+
+            client_id_queue.pop(); /// usunięcie id z kolejki
             mugs_num--;
         }
     }
@@ -126,62 +148,61 @@ void Pub::fill_mugs(double t) {
 
 void Pub::give_beer(double t) {
     /// Wydaje napełnione kufle czekającym klientom
+
     if (fill_time_end <= t) {
         for (auto &it : client_map) {
-            if (it.second.give_status() == WAITING) {
-                it.second.take_beer(t);
+            if (it.second.get_status() == WAITING) {
+                it.second.take_beer(t, get_time_now());  /// wysłąm czas kroku do obliczeń i aktualny czas do wyświetlenia
             }
         }
         fill_time_end = 0;
     }
 }
 
-void RealTimePub::sim_step(double t) {
-    /// Realizacja jednego kroku w symulacji poprzez sprawdzenie wszyskich funkcji realizujących krok
-    if (no_clients()) { return; }
-    all_drink(t);
-    take_mugs();
-    fill_mugs(t);
-    give_beer(t);
-}
-
 void RealTimePub::start_timer() {
     /// Restartuje czas symulacji
+
     start_time = clock();
-    sim_time_int = 0;
+    sim_time = 0;
 }
 
-void RealTimePub::update_time_now() {
-    /// Funkcja odświerzająca czas symulacj
+void RealTimePub::update_sim_time() {
+    /// Funkcja odświerzająca czas symulacj przechowyany w pamięci
+
     clock_t time_now_clock = clock();
-    time_now_sec = ((double) time_now_clock - (double) start_time) / CLOCKS_PER_SEC;
+    sim_time = ((double) time_now_clock - (double) start_time) / CLOCKS_PER_SEC;
+}
+
+double RealTimePub::get_time_now() const {
+    /// Funkcja zwracająca aktualny czas symulacji
+
+    return ((double) clock() - (double) start_time) / CLOCKS_PER_SEC;
 }
 
 void RealTimePub::sim() {
     /// Realizacja symulacji w czasie rzeczywistym wywołując kroki symulacji aż do zamknięcia baru
     /// Wypisuje raport stanó wszyskich klientów co sekundę
-    print_client_report(0);
 
-    start_timer();
-    update_time_now();
-    while (!no_clients()) {
-        sim_step(time_now_sec);
+    print_client_report(0); /// raport początkowy by sprawdzić poprawność inicjalizacji klientów
 
-        if (time_now_sec - sim_time_int >= 1) {
-            print_client_report(time_now_sec);
-            sim_time_int++;
-        }
+    double time = clock(); /// niezależny pomiar czasu wykonania by ocenić błąd
 
-        update_time_now();
+    start_timer(); /// Urochomienie timera wewnętrznego symulacji
+    update_sim_time();
+
+    while (!no_clients()) { /// symulacja wykonuje się aż wszyscy klienci opuszą bar
+
+        all_drink(sim_time); /// wywołanie kolejnych kroków symulacji
+        take_mugs();
+        fill_mugs(sim_time);
+        give_beer(sim_time);
+
+        update_sim_time(); /// Czas symulacji odświerzamy po wykonaniu wszyskich kroków
     }
+
+    time = ((double) clock() - (double) time) / CLOCKS_PER_SEC; /// pomiar całkowitego czasu
+
+    std::cout << "\nCalkowity czas wykonania symulacji: " << time << std::endl;
 }
 
-void RealTimePub::sim_int(double t) {
-    /// Symulacja poprzez iterację po sekundach w int (do szybkiego debugowania)
-    for (int i = 0; i < t; i++) {
-        if (no_clients()) {
-            return;
-        }
-    }
-}
 
