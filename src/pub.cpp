@@ -105,26 +105,40 @@ bool Pub::no_clients() const {
 void Pub::all_drink(double t) {
     /// sprawdza któży kienci skończyli pić
 
+    for (auto id : clients_w_mugs) {
+        if (clients_w_mugs.empty()) { break; }
+        if (client_map.at(id).get_status() == DRINKING) {
+            client_map.at(id).drink(t, get_time_now());  /// wysłąm czas kroku do obliczeń i aktualny czas do wyświetlenia
+        }
+    }
+    /*
     for (auto &it : client_map) {
         if (it.second.get_status() == DRINKING) {
             it.second.drink(t, get_time_now());  /// wysłąm czas kroku do obliczeń i aktualny czas do wyświetlenia
         }
     }
+     */
 }
 
 void Pub::take_mugs() {
     /// Odbiera kufle od klientów któży skończyli pić i dodaje ich na koniec kolejki lub wyrzuca z baru
 
-    for (auto &it : client_map) {
-        if (it.second.get_status() == FINISHED) {
+    auto it = clients_w_mugs.begin();
+    while (it != clients_w_mugs.end()) { /// iteracja whilem bo usuwamy elementy listy w trakcie iteracji
+
+        if (client_map.at(clients_w_mugs.front()).get_status() == FINISHED) {
             mugs_num++;
-            client_id_queue.push(it.first); /// dodanie klienta do kolejki
-            it.second.change_status(GOING_FOR_ANOTHER);
-            it.second.print_status(get_time_now());
-        } else if (it.second.get_status() == WASTED) {
+            client_id_queue.push(clients_w_mugs.front()); /// dodanie klienta do kolejki
+            client_map.at(clients_w_mugs.front()).change_status(GOING_FOR_ANOTHER);
+            client_map.at(clients_w_mugs.front()).print_status(get_time_now());
+            clients_w_mugs.erase(it++);
+        } else if (client_map.at(clients_w_mugs.front()).get_status() == WASTED) {
             mugs_num++;
-            it.second.change_status(KICKED_OUT);
-            it.second.print_status(get_time_now());
+            client_map.at(clients_w_mugs.front()).change_status(KICKED_OUT);
+            client_map.at(clients_w_mugs.front()).print_status(get_time_now());
+            clients_w_mugs.erase(it++);
+        } else {
+            it++;
         }
     }
 }
@@ -137,6 +151,7 @@ void Pub::fill_mugs(double t) {
             if (client_id_queue.empty()) { break; }
             client_map.at(client_id_queue.front()).change_status(WAITING);
             client_map.at(client_id_queue.front()).print_status(get_time_now()); /// wyświetlam aktualny czas
+            clients_w_mugs.push_back(client_id_queue.front());
 
             fill_time_end = t + fill_time; /// do obliczeń wykożystuje czas kroku
 
@@ -150,9 +165,10 @@ void Pub::give_beer(double t) {
     /// Wydaje napełnione kufle czekającym klientom
 
     if (fill_time_end <= t) {
-        for (auto &it : client_map) {
-            if (it.second.get_status() == WAITING) {
-                it.second.take_beer(t, get_time_now());  /// wysłąm czas kroku do obliczeń i aktualny czas do wyświetlenia
+        for (auto id : clients_w_mugs) {
+            if (clients_w_mugs.empty()) { break; }
+            if ( client_map.at(id).get_status() == WAITING) {
+                client_map.at(id).take_beer(t, get_time_now());  /// wysłąm czas kroku do obliczeń i aktualny czas do wyświetlenia
             }
         }
         fill_time_end = 0;
@@ -192,10 +208,15 @@ void RealTimePub::sim() {
 
     while (!no_clients()) { /// symulacja wykonuje się aż wszyscy klienci opuszą bar
 
-        all_drink(sim_time); /// wywołanie kolejnych kroków symulacji
-        take_mugs();
-        fill_mugs(sim_time);
-        give_beer(sim_time);
+        /// wywołanie kolejnych kroków symulacji
+
+        all_drink(sim_time); /// sprawdzenie czy któryś klient skończył pić
+
+        take_mugs(); /// odebranie kufli od klientów któży skończyli
+
+        fill_mugs(sim_time); /// Napełnienie kufli jeśli jest taka potrzeba
+
+        give_beer(sim_time); /// Rozdanie piw oczekującym
 
         update_sim_time(); /// Czas symulacji odświerzamy po wykonaniu wszyskich kroków
     }

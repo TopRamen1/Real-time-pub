@@ -4,6 +4,9 @@
 
 int main() {
     std::string retry = "tak";
+
+    std::cout << "\nProgram symulujacy pub\n" << std::endl;
+
     while (retry == "tak") {
         int n;
         std::cout << "Podaj ilosc klientow: ";

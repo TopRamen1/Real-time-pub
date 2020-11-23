@@ -12,7 +12,10 @@
 #include <ctime>
 #include <iomanip>
 #include <algorithm>
+#include <list>
 
+
+/// Można dowolnie zmieniać dane parametry klienta i pubu
 #define MAX_BEERS_NUM  5
 #define DRINK_TIME 4
 #define MAX_MUGS_NUM 10
@@ -37,6 +40,7 @@ enum ClientStatus {
 
 class Client {
 public:
+    /// w razie potrzeby program jest gotowy na wprowadzenie róznych czasów picia i ilości piw dla klientów
     explicit Client(int id_, int max_beers_num_ = MAX_BEERS_NUM, double drink_time_ = DRINK_TIME);
 
     ~Client() = default;
@@ -45,7 +49,7 @@ public:
 
     std::string get_status_str() const;
 
-    int get_id() const {return id;}
+    int get_id() const { return id; }
 
     void change_status(ClientStatus status1);
 
@@ -53,7 +57,7 @@ public:
 
     void take_beer(double t, double t_pr);
 
-    void print_status(double t) const ;
+    void print_status(double t) const;
 
 private:
     int id;
@@ -89,7 +93,7 @@ public:
 
     void give_beer(double t);
 
-    virtual double get_time_now() const {return 0;}
+    virtual double get_time_now() const { return 0; }
 
 private:
     int mugs_num;
@@ -99,6 +103,7 @@ private:
 
     std::map<int, Client> client_map; /// mapuję klientów pod kluczem id
     std::queue<int> client_id_queue; /// kolejka klientów przechowująca id
+    std::list<int> clients_w_mugs = {}; /// lista klientów posiadających kufel, pozwala zachować odpowiednią kolejność
 };
 
 
@@ -113,6 +118,7 @@ public:
 
     ~RealTimePub() = default;
 
+    /// główna funkcja wykonująca symulację
     void sim();
 
     void start_timer();
